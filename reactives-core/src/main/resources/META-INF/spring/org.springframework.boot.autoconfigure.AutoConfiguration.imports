@@ -1,0 +1,4 @@
+com.reopenai.reactives.core.bench.BenchMarkerAspectConfiguration
+com.reopenai.reactives.core.i18n.I18nConfig
+com.reopenai.reactives.core.serialization.jackson.JacksonConfig
+com.reopenai.reactives.core.ReactiveFrameworkAutoConfiguration

@@ -1,0 +1,3 @@
+com.reopenai.reactives.grpc.ReactivesRPCAutoConfiguration
+com.reopenai.reactives.grpc.server.GrpcServerExtConfiguration
+com.reopenai.reactives.grpc.client.GrpcClientExtConfiguration
