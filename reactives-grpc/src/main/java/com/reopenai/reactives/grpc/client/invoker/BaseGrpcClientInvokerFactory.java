@@ -24,12 +24,16 @@ public abstract class BaseGrpcClientInvokerFactory implements GrpcClientInvokerF
     protected Environment environment;
 
     protected RpcSerialization getSerialization(Method method) {
-        GrpcStub stub = method.getDeclaringClass().getAnnotation(GrpcStub.class);
-        String protocol = Optional.ofNullable(stub.protocol())
+        String protocol = getProtocol(method);
+        return getSerialization(protocol);
+    }
+
+    protected String getProtocol(Method method) {
+        return Optional.ofNullable(method.getDeclaringClass().getAnnotation(GrpcStub.class))
+                .map(GrpcStub::protocol)
                 .filter(StrUtil::isNotBlank)
                 .map(this.environment::resolvePlaceholders)
                 .orElse(this.environment.resolveRequiredPlaceholders("${spring.grpc.global.protocol:PROTOSTUFF}"));
-        return getSerialization(protocol);
     }
 
     protected RpcSerialization getSerialization(String protocol) {

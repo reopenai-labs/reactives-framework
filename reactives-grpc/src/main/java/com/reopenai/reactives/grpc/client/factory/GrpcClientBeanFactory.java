@@ -1,15 +1,12 @@
 package com.reopenai.reactives.grpc.client.factory;
 
 import com.reopenai.reactives.grpc.client.GrpcClientProxy;
-import com.reopenai.reactives.grpc.client.GrpcClientTargetProperties;
 import com.reopenai.reactives.grpc.client.annotation.GrpcStub;
 import com.reopenai.reactives.grpc.client.invoker.GrpcClientInvoker;
 import com.reopenai.reactives.grpc.client.invoker.GrpcClientInvokerFactory;
 import com.reopenai.reactives.grpc.common.GrpcDefinitionUtil;
 import io.grpc.ManagedChannel;
-import io.grpc.MethodDescriptor;
 import lombok.RequiredArgsConstructor;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -25,7 +22,10 @@ import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Allen Huang
@@ -38,8 +38,6 @@ public class GrpcClientBeanFactory implements FactoryBean<Object>, ApplicationCo
     private final ClassLoader classLoader;
 
     private Environment environment;
-
-    private GrpcClientTargetProperties properties;
 
     private GrpcChannelFactory channelFactory;
 
@@ -60,18 +58,19 @@ public class GrpcClientBeanFactory implements FactoryBean<Object>, ApplicationCo
     }
 
     public Map<Method, GrpcClientInvoker> createInvokers() {
-        GrpcStub description = this.targetType.getAnnotation(GrpcStub.class);
-        String target = resolveTarget(description.service());
+        GrpcStub stub = this.targetType.getAnnotation(GrpcStub.class);
         String serviceName = GrpcDefinitionUtil.parseServiceName(this.targetType, this.environment);
-        ManagedChannel channel = channelFactory.createChannel(target);
+        ManagedChannel channel = channelFactory.createChannel(environment.resolvePlaceholders(stub.service()));
 
-        Set<Method> methods = MethodIntrospector.selectMethods(this.targetType, this::matchMethod);
+        Set<Method> methods = MethodIntrospector.selectMethods(this.targetType, GrpcDefinitionUtil::methodMatcher);
         Map<Method, GrpcClientInvoker> invokers = new HashMap<>(methods.size());
+        GrpcDefinitionUtil.Checker checker = new GrpcDefinitionUtil.Checker();
         for (Method method : methods) {
-            MethodDescriptor<byte[], byte[]> md = GrpcDefinitionUtil.buildMethodDescriptor(serviceName, method);
+            checker.check(method);
             GrpcClientInvoker invoker = null;
+            GrpcMethodDetail methodDetail = new GrpcMethodDetail(serviceName, method);
             for (GrpcClientInvokerFactory invokerFactory : invokerFactories) {
-                invoker = invokerFactory.create(channel, method, md);
+                invoker = invokerFactory.create(channel, methodDetail);
                 if (invoker != null) {
                     invokers.put(method, invoker);
                     break;
@@ -84,44 +83,15 @@ public class GrpcClientBeanFactory implements FactoryBean<Object>, ApplicationCo
         return invokers;
     }
 
-    private String resolveTarget(String serviceName) {
-        serviceName = this.environment.resolvePlaceholders(serviceName);
-        Map<String, String> specTargets = Optional.ofNullable(properties.getSpec())
-                .orElse(Collections.emptyMap());
-        String s = specTargets.get(serviceName);
-        if (s != null) {
-            return s;
-        }
-        Set<String> exclude = Optional.ofNullable(properties.getExcludeTemplates())
-                .orElse(Collections.emptySet());
-        if (exclude.contains(serviceName)) {
-            return serviceName;
-        }
-        String arg = serviceName;
-        return Optional.ofNullable(properties.getTemplate())
-                .map(template -> String.format(template, arg))
-                .orElse(serviceName);
-    }
-
-    protected boolean matchMethod(Method method) {
-        Class<?> declaringClass = method.getDeclaringClass();
-        if (Object.class.equals(declaringClass)) {
-            return false;
-        }
-        Class<?> returnType = method.getReturnType();
-        return Publisher.class.isAssignableFrom(returnType);
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.channelFactory = applicationContext.getBean(GrpcChannelFactory.class);
+        this.invokerFactories = applicationContext.getBeansOfType(GrpcClientInvokerFactory.class).values();
     }
 
     @Override
     public Class<?> getObjectType() {
         return targetType;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.channelFactory = applicationContext.getBean(GrpcChannelFactory.class);
-        this.properties = applicationContext.getBean(GrpcClientTargetProperties.class);
-        this.invokerFactories = applicationContext.getBeansOfType(GrpcClientInvokerFactory.class).values();
     }
 
     @Override

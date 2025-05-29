@@ -25,15 +25,15 @@ public class GrpcClientProxy implements InvocationHandler {
         if (Object.class.equals(declaringClass)) {
             return method.invoke(this, args);
         }
+        if (method.isDefault()) {
+            return InvocationHandler.invokeDefault(proxy, method, args);
+        }
         if (logger.isDebugEnabled()) {
             logger.debug("[gRPC]requesting.args:{}", Arrays.asList(args));
         }
         GrpcClientInvoker invoker = invokers.get(method);
         if (invoker != null) {
             return invoker.invoke(args);
-        }
-        if (method.isDefault()) {
-            return InvocationHandler.invokeDefault(proxy, method, args);
         }
         throw new IllegalStateException("Unexpected method invocation: " + method);
     }

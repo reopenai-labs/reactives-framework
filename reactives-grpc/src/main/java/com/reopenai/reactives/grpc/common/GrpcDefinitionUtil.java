@@ -10,8 +10,9 @@ import org.springframework.core.env.Environment;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 
 /**
  * gRPC服务描述工具类
@@ -90,12 +91,51 @@ public final class GrpcDefinitionUtil {
     }
 
     public static String parseServiceName(Class<?> type, Environment environment) {
-        String packages = Optional.ofNullable(type.getAnnotation(GrpcStub.class))
-                .map(GrpcStub::packages)
-                .filter(StrUtil::isNotBlank)
-                .map(environment::resolvePlaceholders)
-                .orElseGet(type::getPackageName);
-        return String.join(".", packages, type.getSimpleName());
+        GrpcStub stub = type.getAnnotation(GrpcStub.class);
+        if (stub != null) {
+            String packages = stub.packages();
+            if (StrUtil.isNotBlank(packages)) {
+                packages = environment.resolvePlaceholders(packages);
+            } else {
+                packages = type.getPackageName();
+            }
+            String name = stub.name();
+            if (StrUtil.isNotBlank(name)) {
+                name = environment.resolvePlaceholders(name);
+            } else {
+                name = type.getSimpleName();
+            }
+            return String.join(".", packages, name);
+        }
+        return String.join(".", type.getPackageName(), type.getSimpleName());
+    }
+
+    public static boolean methodMatcher(Method method) {
+        Class<?> declaringClass = method.getDeclaringClass();
+        if (Object.class.equals(declaringClass)) {
+            return false;
+        }
+        if (!declaringClass.isAnnotationPresent(GrpcStub.class)) {
+            return false;
+        }
+        return Modifier.isAbstract(method.getModifiers());
+    }
+
+    public static final class Checker {
+
+        private final Set<String> registeredMethods = new HashSet<>();
+
+        public void check(Method method) {
+            String name = method.getName();
+            if (method.getParameterCount() > 1) {
+                throw new IllegalArgumentException(String.format("创建gRPC接口失败,gRPC的参数不能超过1个.see: %s#%s", method.getDeclaringClass().getName(), name));
+            }
+            if (registeredMethods.contains(name)) {
+                throw new IllegalArgumentException(String.format("创建gRPC接口失败,方法名重复.see: %s#%s", method.getDeclaringClass().getName(), name));
+            }
+            registeredMethods.add(name);
+        }
+
     }
 
 }

@@ -2,7 +2,6 @@ package com.reopenai.reactives.grpc.client.invoker;
 
 import com.reopenai.reactives.grpc.serialization.RpcSerialization;
 import io.grpc.Channel;
-import io.grpc.MethodDescriptor;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
@@ -18,11 +17,12 @@ public class MonoGrpcClientInvokerFactory extends BaseGrpcClientInvokerFactory {
     }
 
     @Override
-    public GrpcClientInvoker create(Channel channel, Method method, MethodDescriptor<byte[], byte[]> methodDescriptor) {
-        Class<?> returnType = method.getReturnType();
+    public GrpcClientInvoker create(Channel channel, GrpcMethodDetail methodDetail) {
+        Class<?> returnType = methodDetail.getReturnClass();
         if (Mono.class.isAssignableFrom(returnType)) {
+            Method method = methodDetail.getMethod();
             RpcSerialization serialization = getSerialization(method);
-            return new MonoGrpcClientInvoker(channel, method, serialization, methodDescriptor);
+            return new MonoGrpcClientInvoker(channel, methodDetail, serialization);
         }
         return null;
     }

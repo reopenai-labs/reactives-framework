@@ -4,10 +4,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.reopenai.reactives.grpc.serialization.RpcSerialization;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
-import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -19,8 +17,8 @@ import java.util.function.Function;
  */
 public class AsyncGrpcClientInvoker extends BaseGrpcClientInvoker {
 
-    public AsyncGrpcClientInvoker(Channel channel, Method method, RpcSerialization rpcSerialization, MethodDescriptor<byte[], byte[]> methodDescriptor) {
-        super(channel, method, rpcSerialization, methodDescriptor);
+    public AsyncGrpcClientInvoker(Channel channel, GrpcMethodDetail methodDetail, RpcSerialization rpcSerialization) {
+        super(channel, methodDetail, rpcSerialization);
     }
 
     @Override

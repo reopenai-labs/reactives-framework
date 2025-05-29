@@ -1,14 +1,11 @@
 package com.reopenai.reactives.grpc.client.invoker;
 
-import com.reopenai.reactives.core.bench.BenchMarker;
 import com.reopenai.reactives.grpc.serialization.RpcSerialization;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
@@ -16,35 +13,21 @@ import java.lang.reflect.Type;
  */
 public abstract class BaseGrpcClientInvoker implements GrpcClientInvoker {
 
-    protected final Method method;
+    protected final GrpcMethodDetail methodDetail;
 
     protected final Channel channel;
 
-    protected final Type returnType;
-
-    protected final String benchFlag;
-
     protected final RpcSerialization rpcSerialization;
 
-    protected final MethodDescriptor<byte[], byte[]> methodDescriptor;
-
-    public BaseGrpcClientInvoker(Channel channel, Method method, RpcSerialization rpcSerialization,
-                                 MethodDescriptor<byte[], byte[]> methodDescriptor) {
-        this.method = method;
+    public BaseGrpcClientInvoker(Channel channel, GrpcMethodDetail methodDetail, RpcSerialization rpcSerialization) {
+        this.methodDetail = methodDetail;
         this.channel = channel;
         this.rpcSerialization = rpcSerialization;
-        this.methodDescriptor = methodDescriptor;
-        this.benchFlag = BenchMarker.parseMethodFlag(method);
-        this.returnType = resolveReturnType(method);
-    }
-
-    protected Type resolveReturnType(Method method) {
-        ParameterizedType genericReturnType = (ParameterizedType) method.getGenericReturnType();
-        return genericReturnType.getActualTypeArguments()[0];
     }
 
     protected ClientCall<byte[], byte[]> newCall() {
-        return this.channel.newCall(this.methodDescriptor, CallOptions.DEFAULT);
+        MethodDescriptor<byte[], byte[]> methodDescriptor = this.methodDetail.getMethodDescriptor();
+        return this.channel.newCall(methodDescriptor, CallOptions.DEFAULT);
     }
 
     protected byte[] serializerArguments(Object[] arguments) {
@@ -53,6 +36,7 @@ public abstract class BaseGrpcClientInvoker implements GrpcClientInvoker {
     }
 
     protected Object deserializerResult(byte[] data) {
+        Type returnType = this.methodDetail.getReturnType();
         return rpcSerialization.deserializer(data, returnType);
     }
 

@@ -6,23 +6,19 @@ import com.reopenai.reactives.grpc.serialization.RpcSerialization;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.Context;
-import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.context.ContextView;
 
-import java.lang.reflect.Method;
-
 /**
  * Created by Allen Huang
  */
 public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
 
-    public MonoGrpcClientInvoker(Channel channel, Method method, RpcSerialization serialization,
-                                 MethodDescriptor<byte[], byte[]> methodDescriptor) {
-        super(channel, method, serialization, methodDescriptor);
+    public MonoGrpcClientInvoker(Channel channel, GrpcMethodDetail methodDetail, RpcSerialization serialization) {
+        super(channel, methodDetail, serialization);
     }
 
     @Override
@@ -36,7 +32,7 @@ public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
                                 ClientCalls.asyncUnaryCall(clientCall, argument, adapter);
                             });
                         })
-                        .transformDeferredContextual((mono, cv) -> BenchMarker.markWithContext(mono, cv, benchFlag))
+                        .transformDeferredContextual((mono, cv) -> BenchMarker.markWithContext(mono, cv, methodDetail.getBenchFlag()))
                         .flatMap(this::deserialize)
         );
     }
