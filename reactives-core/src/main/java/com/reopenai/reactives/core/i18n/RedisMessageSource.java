@@ -2,9 +2,9 @@ package com.reopenai.reactives.core.i18n;
 
 import cn.hutool.core.util.StrUtil;
 import com.reopenai.reactives.bean.enums.Language;
-import com.reopenai.reactives.core.builtin.Tuple;
+import com.reopenai.reactives.core.cache.local.CacheConfig;
 import com.reopenai.reactives.core.cache.local.LocalCache;
-import com.reopenai.reactives.core.cache.local.LocalCacheInvoker;
+import com.reopenai.reactives.core.lambda.XFunction;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
@@ -18,33 +18,32 @@ import java.util.Locale;
  */
 public class RedisMessageSource extends ResourceBundleMessageSource {
 
+    private static final String CACHE_NAME = "system.i18n";
+
     private static final MessageFormat NULL_VALUE = new MessageFormat("");
 
-    private final LocalCacheInvoker.F1<Tuple.V2<Language, String>, MessageFormat> localCache;
+    private final XFunction.R2<Language, String, MessageFormat> localCache;
 
     public RedisMessageSource(StringRedisTemplate redisTemplate) {
-        this.localCache = LocalCache.createInvokerWithTuple("system.i18n", 64, 512, Duration.ofMinutes(15), Duration.ofMinutes(10), tuple -> {
-            Language language = tuple.v1();
-            String code = tuple.v2();
+        this.localCache = LocalCache.create(CACHE_NAME, (Language language, String code) -> {
             String msgCode = String.format("SYSTEM:I18N:%s", language.getDisplayCode());
             String value = redisTemplate.<String, String>opsForHash().get(msgCode, code);
             if (StrUtil.isNotBlank(value)) {
                 return new MessageFormat(value);
             }
             return NULL_VALUE;
-        });
+        }, new CacheConfig<>(64, 512, Duration.ofMinutes(15), Duration.ofMinutes(10)));
     }
 
     @Override
     protected MessageFormat resolveCode(String code, Locale locale) {
         Language language = Language.fromLocale(locale);
-        MessageFormat messageFormat = localCache.get(new Tuple.V2<>(language, code));
+        MessageFormat messageFormat = localCache.call(language, code);
         if (messageFormat == NULL_VALUE) {
             Language subLanguage = Language.fromLocale(new Locale(locale.getLanguage()));
             if (subLanguage != language) {
-                messageFormat = localCache.get(new Tuple.V2<>(subLanguage, code));
+                messageFormat = localCache.call(subLanguage, code);
                 if (messageFormat != NULL_VALUE) {
-                    localCache.put(new Tuple.V2<>(language, code), messageFormat);
                     return messageFormat;
                 }
             }

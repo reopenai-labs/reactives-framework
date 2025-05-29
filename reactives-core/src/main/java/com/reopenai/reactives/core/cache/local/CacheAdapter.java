@@ -11,6 +11,10 @@ import java.util.function.Consumer;
  */
 class CacheAdapter {
 
+    //---------------------
+    //    监听器的适配器
+    //---------------------
+
     public static <V> BiConsumer<Boolean, V> listenerAdapter(Consumer<V> consumer) {
         return consumer == null ? null : (k, v) -> consumer.accept(v);
     }
