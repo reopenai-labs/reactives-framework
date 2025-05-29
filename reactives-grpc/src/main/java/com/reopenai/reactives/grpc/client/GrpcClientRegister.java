@@ -2,7 +2,6 @@ package com.reopenai.reactives.grpc.client;
 
 import com.reopenai.reactives.core.runtime.RuntimeUtil;
 import com.reopenai.reactives.grpc.client.annotation.GrpcStub;
-import com.reopenai.reactives.grpc.client.factory.GrpcClientBeanFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.support.*;
 import org.springframework.context.EnvironmentAware;
@@ -48,11 +47,6 @@ public class GrpcClientRegister implements ImportBeanDefinitionRegistrar, Resour
                 });
     }
 
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
-    }
-
     protected ClassPathScanningCandidateComponentProvider getScanner() {
         String mainPackage = RuntimeUtil.getMainPackage();
         return new ClassPathScanningCandidateComponentProvider(false, this.environment) {
@@ -68,6 +62,11 @@ public class GrpcClientRegister implements ImportBeanDefinitionRegistrar, Resour
                 return false;
             }
         };
+    }
+
+    @Override
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
     }
 
     @Override

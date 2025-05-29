@@ -92,50 +92,33 @@ public interface ErrorCode {
         //---------------
         //  RPC相关
         //---------------
+        //---------------
+        //  RPC相关
+        //---------------
         /**
-         * RPC接口参数错误.args=原因
+         * RPC接口参数错误
          */
-        RPC_ARGUMENT_TYPE_MISMATCH("5100"),
-        /**
-         * RPC接口参数校验未通过
-         */
-        RPC_ARGUMENT_VALIDATION("5101"),
+        RPC_INVALID_ARGUMENT("5100"),
         /**
          * RPC接口不存在
          */
-        RPC_NOT_FOUND("5102"),
+        RPC_NOT_FOUND("5101"),
         /**
-         * RPC请求方式错误
+         * RPC接口被限流
          */
-        PRC_METHOD_NOT_SUPPORTED("5103"),
-        /**
-         * RPC请求方式错误
-         */
-        PRC_MEDIA_TYPE_NOT_SUPPORTED("5104"),
-        /**
-         * RPC缺少请求参数
-         */
-        PRC_MISSING_PARAMETER("5105"),
-        /**
-         * RPC参数错误
-         */
-        PRC_REQUEST_UNSATISFIED("5106"),
-        /**
-         * 请求参数错误
-         */
-        RPC_PARAMETER_MISTAKE("5107"),
+        PRC_RESOURCE_EXHAUSTED("5102"),
         /**
          * RPC服务端执行异常
          */
-        RPC_SERVER_ERROR("5108"),
+        RPC_SERVER_ERROR("5103"),
         /**
          * RPC timeout异常
          */
-        RPC_TIMEOUT("5109"),
+        RPC_TIMEOUT("5104"),
         /**
          * RPC的目标对象状态不正常
          */
-        RPC_UNAVAILABLE("5110");
+        RPC_UNAVAILABLE("5105");
 
         private final String code;
 

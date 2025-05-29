@@ -1,6 +1,6 @@
 package com.reopenai.reactives.core.serialization.jackson.serializer;
 
-import com.reopenai.reactives.core.builtin.constants.JavaTimeConstants;
+import com.reopenai.reactives.bean.constants.JavaTimeConstants;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;

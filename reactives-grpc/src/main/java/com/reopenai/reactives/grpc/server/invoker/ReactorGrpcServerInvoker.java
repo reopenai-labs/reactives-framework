@@ -1,60 +1,40 @@
 package com.reopenai.reactives.grpc.server.invoker;
 
-import cn.hutool.core.lang.reflect.MethodHandleUtil;
-import com.reopenai.reactives.core.bench.BenchMarker;
 import com.reopenai.reactives.bean.constants.EmptyConstants;
-import com.reopenai.reactives.grpc.common.metadata.GrpcKeys;
+import com.reopenai.reactives.core.bench.BenchMarker;
+import com.reopenai.reactives.grpc.common.GrpcMethodDetail;
+import com.reopenai.reactives.grpc.common.metadata.GrpcContextKeys;
 import com.reopenai.reactives.grpc.serialization.RpcSerialization;
 import io.grpc.stub.ServerCalls;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import org.reactivestreams.Subscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.BeanCreationException;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.*;
+import java.lang.reflect.Parameter;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Allen Huang
  */
-public class ReactiveGrpcServerInvoker implements ServerCalls.UnaryMethod<byte[], byte[]> {
+@RequiredArgsConstructor
+public class ReactorGrpcServerInvoker implements ServerCalls.UnaryMethod<byte[], byte[]> {
 
-    private final String benchFlag;
+    private final Object bean;
 
-    private final Logger logger;
-
-    private final Type parameterType;
-
-    private final MethodHandle methodHandle;
+    private final GrpcMethodDetail methodDetail;
 
     private final RpcSerialization serialization;
 
-    public ReactiveGrpcServerInvoker(Object bean, Method method, RpcSerialization serialization) {
-        this.serialization = serialization;
-        this.benchFlag = BenchMarker.parseMethodFlag(method);
-        this.logger = LoggerFactory.getLogger(method.getDeclaringClass());
-        this.methodHandle = findMethodHandle(method).bindTo(bean);
-        Type[] genericParameterTypes = method.getGenericParameterTypes();
-        if (genericParameterTypes.length == 0) {
-            this.parameterType = null;
-        } else {
-            this.parameterType = genericParameterTypes[0];
-        }
-    }
 
     @Override
     public void invoke(byte[] bytes, StreamObserver<byte[]> streamObserver) {
         Map<Object, Object> context = buildContext();
         BenchMarker marker = new BenchMarker();
         context.put(BenchMarker.class, marker);
-        StreamObserverAdapter adapter = new StreamObserverAdapter(streamObserver, marker, benchFlag, logger);
+        StreamObserverAdapter adapter = new StreamObserverAdapter(streamObserver, marker, methodDetail);
         invokeWithArguments(bytes)
                 .map(serialization::serializer)
                 .doOnError(adapter::onError)
@@ -66,7 +46,7 @@ public class ReactiveGrpcServerInvoker implements ServerCalls.UnaryMethod<byte[]
 
     private Map<Object, Object> buildContext() {
         Map<Object, Object> context = new HashMap<>();
-        for (GrpcKeys key : GrpcKeys.values()) {
+        for (GrpcContextKeys key : GrpcContextKeys.values()) {
             String value = key.getContextKey().get();
             if (value != null) {
                 context.put(key.getAppKey(), key.getDecode().apply(value));
@@ -82,9 +62,7 @@ public class ReactiveGrpcServerInvoker implements ServerCalls.UnaryMethod<byte[]
 
         private final BenchMarker marker;
 
-        private final String benchFlag;
-
-        private final Logger logger;
+        private final GrpcMethodDetail methodDetail;
 
         private boolean published;
 
@@ -105,39 +83,32 @@ public class ReactiveGrpcServerInvoker implements ServerCalls.UnaryMethod<byte[]
                 delegate.onNext(EmptyConstants.EMPTY_BYTE_ARRAY);
             }
             delegate.onCompleted();
-            marker.mark(benchFlag);
-            logger.info("gRPC Call: {}", marker.getResult());
+            marker.mark(methodDetail.getBenchFlag());
+            methodDetail.getLogger().info("gRPC Call: {}", marker.getResult());
         }
 
         public void doOnSubscribe(Subscription subscription) {
-            marker.mark(benchFlag);
+            marker.mark(methodDetail.getBenchFlag());
         }
 
     }
 
+    @SuppressWarnings("unchecked")
     private Mono<Object> invokeWithArguments(byte[] bytes) {
-        List<Object> arguments;
-        if (parameterType == null) {
-            arguments = Collections.emptyList();
+        Object[] arguments;
+        Parameter parameter = methodDetail.getParameter();
+        if (parameter == null) {
+            arguments = EmptyConstants.EMPTY_OBJECT_ARRAY;
         } else if (bytes.length == 0) {
-            arguments = new ArrayList<>(1);
+            arguments = new Object[]{null};
         } else {
-            Object deserializer = serialization.deserializer(bytes, parameterType);
-            arguments = List.of(deserializer);
+            Object deserializer = serialization.deserializer(bytes, parameter.getParameterizedType());
+            arguments = new Object[]{deserializer};
         }
         try {
-            return (Mono<Object>) this.methodHandle.invokeWithArguments(arguments);
+            return (Mono<Object>) methodDetail.getMethod().invoke(bean, arguments);
         } catch (Throwable e) {
             return Mono.error(e);
-        }
-    }
-
-    private MethodHandle findMethodHandle(Method method) {
-        MethodHandles.Lookup lookup = MethodHandleUtil.lookup(method.getDeclaringClass());
-        try {
-            return lookup.unreflect(method);
-        } catch (IllegalAccessException e) {
-            throw new BeanCreationException("Cannot created gRPC service Bean.", e);
         }
     }
 

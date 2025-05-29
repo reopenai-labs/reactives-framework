@@ -1,4 +1,4 @@
-package com.reopenai.reactives.core.builtin.constants;
+package com.reopenai.reactives.bean.constants;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

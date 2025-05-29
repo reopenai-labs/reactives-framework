@@ -1,8 +1,8 @@
 package com.reopenai.reactives.core.i18n;
 
 import com.reopenai.reactives.bean.error.ErrorCode;
-import com.reopenai.reactives.core.builtin.constants.EmptyConstants;
-import com.reopenai.reactives.core.builtin.constants.JavaTimeConstants;
+import com.reopenai.reactives.bean.constants.EmptyConstants;
+import com.reopenai.reactives.bean.constants.JavaTimeConstants;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;

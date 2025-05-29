@@ -1,13 +1,14 @@
 package com.reopenai.reactives.grpc.client.invoker;
 
-import com.reopenai.reactives.core.bench.BenchMarker;
-import com.reopenai.reactives.grpc.common.metadata.GrpcKeys;
+import com.reopenai.reactives.core.bench.BenchMarkers;
+import com.reopenai.reactives.grpc.client.handler.GrpcClientExceptionHandler;
+import com.reopenai.reactives.grpc.common.GrpcMethodDetail;
+import com.reopenai.reactives.grpc.common.metadata.GrpcContextKeys;
 import com.reopenai.reactives.grpc.serialization.RpcSerialization;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.Context;
+import io.grpc.*;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.context.ContextView;
@@ -15,11 +16,16 @@ import reactor.util.context.ContextView;
 /**
  * Created by Allen Huang
  */
+@RequiredArgsConstructor
 public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
 
-    public MonoGrpcClientInvoker(Channel channel, GrpcMethodDetail methodDetail, RpcSerialization serialization) {
-        super(channel, methodDetail, serialization);
-    }
+    protected final Channel channel;
+
+    protected final GrpcMethodDetail methodDetail;
+
+    protected final RpcSerialization rpcSerialization;
+
+    private final GrpcClientExceptionHandler grpcClientExceptionHandler;
 
     @Override
     public Mono<?> invoke(Object[] arguments) {
@@ -32,7 +38,8 @@ public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
                                 ClientCalls.asyncUnaryCall(clientCall, argument, adapter);
                             });
                         })
-                        .transformDeferredContextual((mono, cv) -> BenchMarker.markWithContext(mono, cv, methodDetail.getBenchFlag()))
+                        .onErrorMap(throwable -> grpcClientExceptionHandler.handle(this.methodDetail, throwable))
+                        .transformDeferredContextual((mono, cv) -> BenchMarkers.markWithContext(mono, cv, methodDetail.getBenchFlag()))
                         .flatMap(this::deserialize)
         );
     }
@@ -44,7 +51,7 @@ public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
 
     private Context currentContext(ContextView ctx) {
         Context context = Context.current();
-        for (GrpcKeys key : GrpcKeys.values()) {
+        for (GrpcContextKeys key : GrpcContextKeys.values()) {
             Object value = ctx.getOrDefault(key.getAppKey(), null);
             if (value != null) {
                 context = context.withValue(key.getContextKey(), key.getEncode().apply(value));
@@ -52,6 +59,22 @@ public class MonoGrpcClientInvoker extends BaseGrpcClientInvoker {
         }
         return context;
     }
+
+    protected ClientCall<byte[], byte[]> newCall() {
+        MethodDescriptor<byte[], byte[]> methodDescriptor = this.methodDetail.getMethodDescriptor();
+        return this.channel.newCall(methodDescriptor, CallOptions.DEFAULT);
+    }
+
+    @Override
+    public RpcSerialization getRpcSerialization() {
+        return this.rpcSerialization;
+    }
+
+    @Override
+    public GrpcMethodDetail getMethodDetail() {
+        return this.methodDetail;
+    }
+
 
     private record StreamObserverAdapter(MonoSink<byte[]> sink) implements StreamObserver<byte[]> {
 

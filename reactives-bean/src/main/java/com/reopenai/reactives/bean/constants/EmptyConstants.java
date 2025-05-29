@@ -1,4 +1,4 @@
-package com.reopenai.reactives.core.builtin.constants;
+package com.reopenai.reactives.bean.constants;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,6 +16,14 @@ public final class EmptyConstants {
      */
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
+    /**
+     * 空字符串列表
+     */
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    /**
+     * 空的字节数组
+     */
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     /**

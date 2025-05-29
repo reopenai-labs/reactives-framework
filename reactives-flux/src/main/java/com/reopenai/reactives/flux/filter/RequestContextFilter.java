@@ -3,7 +3,7 @@ package com.reopenai.reactives.flux.filter;
 import cn.hutool.core.util.IdUtil;
 import com.reopenai.reactives.core.bench.BenchMakerIgnore;
 import com.reopenai.reactives.core.bench.BenchMarker;
-import com.reopenai.reactives.core.builtin.constants.SystemConstants;
+import com.reopenai.reactives.bean.constants.SystemConstants;
 import com.reopenai.reactives.flux.beans.RequestHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;

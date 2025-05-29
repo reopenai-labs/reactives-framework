@@ -1,10 +1,10 @@
-package com.reopenai.reactives.grpc.client.factory;
+package com.reopenai.reactives.grpc.client;
 
-import com.reopenai.reactives.grpc.client.GrpcClientProxy;
 import com.reopenai.reactives.grpc.client.annotation.GrpcStub;
 import com.reopenai.reactives.grpc.client.invoker.GrpcClientInvoker;
 import com.reopenai.reactives.grpc.client.invoker.GrpcClientInvokerFactory;
 import com.reopenai.reactives.grpc.common.GrpcDefinitionUtil;
+import com.reopenai.reactives.grpc.common.GrpcMethodDetail;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -59,7 +59,6 @@ public class GrpcClientBeanFactory implements FactoryBean<Object>, ApplicationCo
 
     public Map<Method, GrpcClientInvoker> createInvokers() {
         GrpcStub stub = this.targetType.getAnnotation(GrpcStub.class);
-        String serviceName = GrpcDefinitionUtil.parseServiceName(this.targetType, this.environment);
         ManagedChannel channel = channelFactory.createChannel(environment.resolvePlaceholders(stub.service()));
 
         Set<Method> methods = MethodIntrospector.selectMethods(this.targetType, GrpcDefinitionUtil::methodMatcher);
@@ -68,7 +67,7 @@ public class GrpcClientBeanFactory implements FactoryBean<Object>, ApplicationCo
         for (Method method : methods) {
             checker.check(method);
             GrpcClientInvoker invoker = null;
-            GrpcMethodDetail methodDetail = new GrpcMethodDetail(serviceName, method);
+            GrpcMethodDetail methodDetail = new GrpcMethodDetail(this.environment, method);
             for (GrpcClientInvokerFactory invokerFactory : invokerFactories) {
                 invoker = invokerFactory.create(channel, methodDetail);
                 if (invoker != null) {

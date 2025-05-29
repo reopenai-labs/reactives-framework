@@ -1,4 +1,4 @@
-package com.reopenai.reactives.core.builtin.constants;
+package com.reopenai.reactives.bean.constants;
 
 /**
  * 系统常量

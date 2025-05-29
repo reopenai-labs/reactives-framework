@@ -23,8 +23,9 @@
         <swagger.version>2.2.28</swagger.version>
         <springdoc.version>1.8.0</springdoc.version>
         <protostuff.version>1.8.0</protostuff.version>
-        <spring-grpc.version>0.4.0</spring-grpc.version>
+        <spring-grpc.version>0.8.0</spring-grpc.version>
         <spring-boot.version>3.4.3</spring-boot.version>
+        <threadlocal.version>2.14.2</threadlocal.version>
         <springdoc.webflux-ui>2.8.5</springdoc.webflux-ui>
         <!-- maven -->
         <maven.compiler.source>17</maven.compiler.source>
@@ -110,6 +111,12 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.webflux-ui}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>transmittable-thread-local</artifactId>
+                <version>${threadlocal.version}</version>
             </dependency>
 
             <dependency>

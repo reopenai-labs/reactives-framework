@@ -1,5 +1,6 @@
 package com.reopenai.reactives.grpc.client.invoker;
 
+import com.reopenai.reactives.grpc.common.GrpcMethodDetail;
 import io.grpc.Channel;
 import org.springframework.core.Ordered;
 

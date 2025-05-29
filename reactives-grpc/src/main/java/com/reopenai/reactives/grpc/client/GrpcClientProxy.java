@@ -1,11 +1,13 @@
 package com.reopenai.reactives.grpc.client;
 
+import com.reopenai.reactives.core.reflect.ProxyUtil;
 import com.reopenai.reactives.grpc.client.invoker.GrpcClientInvoker;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -25,8 +27,8 @@ public class GrpcClientProxy implements InvocationHandler {
         if (Object.class.equals(declaringClass)) {
             return method.invoke(this, args);
         }
-        if (method.isDefault()) {
-            return InvocationHandler.invokeDefault(proxy, method, args);
+        if (!Modifier.isAbstract(method.getModifiers())) {
+            return ProxyUtil.invokeDefaultMethod(proxy, method, args);
         }
         if (logger.isDebugEnabled()) {
             logger.debug("[gRPC]requesting.args:{}", Arrays.asList(args));

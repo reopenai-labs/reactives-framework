@@ -14,6 +14,8 @@ public @interface GrpcStub {
 
     String service();
 
+    String name() default "";
+
     String packages() default "";
 
     String protocol() default "protostuff";

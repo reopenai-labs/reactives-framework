@@ -2,8 +2,8 @@ package com.reopenai.reactives.grpc.server;
 
 import com.reopenai.reactives.grpc.client.annotation.GrpcStub;
 import com.reopenai.reactives.grpc.common.GrpcDefinitionUtil;
-import com.reopenai.reactives.grpc.serialization.RpcSerialization;
-import com.reopenai.reactives.grpc.server.invoker.ReactiveGrpcServerInvoker;
+import com.reopenai.reactives.grpc.common.GrpcMethodDetail;
+import com.reopenai.reactives.grpc.server.invoker.GrpcServerInvokeFactory;
 import com.reopenai.reactives.grpc.server.test.EchoServiceGrpc;
 import io.grpc.*;
 import io.grpc.stub.ServerCalls;
@@ -19,13 +19,9 @@ import org.springframework.grpc.server.service.GrpcServiceConfigurer;
 import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Created by Allen Huang
@@ -34,18 +30,18 @@ public class CustomGrpcServiceDiscoverer extends DefaultGrpcServiceDiscoverer im
 
     private final ApplicationContext applicationContext;
 
-    private final Map<String, RpcSerialization> rpcSerializationMap;
-
     private Environment environment;
 
     private List<ServerInterceptor> globalInterceptors;
 
+    private final GrpcServerInvokeFactory grpcServerInvokeFactory;
+
     public CustomGrpcServiceDiscoverer(GrpcServiceConfigurer serviceConfigurer,
                                        ApplicationContext applicationContext,
-                                       List<RpcSerialization> rpcSerialization) {
+                                       GrpcServerInvokeFactory grpcServerInvokeFactory) {
         super(serviceConfigurer, applicationContext);
         this.applicationContext = applicationContext;
-        this.rpcSerializationMap = rpcSerialization.stream().collect(Collectors.toMap(RpcSerialization::supportType, Function.identity()));
+        this.grpcServerInvokeFactory = grpcServerInvokeFactory;
     }
 
     @Override
@@ -60,20 +56,19 @@ public class CustomGrpcServiceDiscoverer extends DefaultGrpcServiceDiscoverer im
             Class<?> realClass = ClassUtils.getUserClass(bean);
             GrpcService grpcService = realClass.getAnnotation(GrpcService.class);
             Class<?>[] superInterfaces = ClassUtils.getAllInterfaces(bean);
+            GrpcDefinitionUtil.Checker checker = new GrpcDefinitionUtil.Checker();
             for (Class<?> superInterface : superInterfaces) {
                 GrpcStub stub = superInterface.getAnnotation(GrpcStub.class);
                 if (stub != null) {
-                    String serviceName = GrpcDefinitionUtil.parseServiceName(superInterface, this.environment);
                     ServiceDescriptor serviceDescriptor = GrpcDefinitionUtil.buildServiceDescriptor(superInterface, this.environment);
                     ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceDescriptor);
                     for (Method method : superInterface.getDeclaredMethods()) {
-                        if (Modifier.isAbstract(method.getModifiers())) {
-                            MethodDescriptor<byte[], byte[]> md = GrpcDefinitionUtil.buildMethodDescriptor(serviceName, method);
-                            RpcSerialization rpcSerialization = Optional.ofNullable(this.rpcSerializationMap.get(stub.protocol()))
-                                    .orElseThrow(() -> new IllegalStateException("不支持的序列化协议:" + stub.protocol() + "see: " + method.getDeclaringClass().getName() + method.getName()));
-                            ReactiveGrpcServerInvoker reactiveGrpcServerInvoker = new ReactiveGrpcServerInvoker(bean, method, rpcSerialization);
-                            ServerCallHandler<byte[], byte[]> handler = ServerCalls.asyncUnaryCall(reactiveGrpcServerInvoker);
-                            builder.addMethod(md, handler);
+                        if (GrpcDefinitionUtil.methodMatcher(method)) {
+                            checker.check(method);
+                            GrpcMethodDetail methodDetail = new GrpcMethodDetail(this.environment, method);
+                            ServerCalls.UnaryMethod<byte[], byte[]> unaryMethod = grpcServerInvokeFactory.create(bean, methodDetail);
+                            ServerCallHandler<byte[], byte[]> handler = ServerCalls.asyncUnaryCall(unaryMethod);
+                            builder.addMethod(methodDetail.getMethodDescriptor(), handler);
                         }
                     }
                     definitions.add(bindInterceptors(builder.build(), grpcService));
