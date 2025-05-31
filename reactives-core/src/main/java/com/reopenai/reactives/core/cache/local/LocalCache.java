@@ -38,60 +38,60 @@ public class LocalCache {
     //--------------------
 
     public static <V> XFunction.R0<V> create(String cacheName, Supplier<V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Boolean, V> cache = LocalCache.createCache(cacheName, v -> func.get(), config);
+        LocalCacheInstance<Boolean, V> cache = LocalCache.createCache(cacheName, v -> func.get(), config);
         return () -> cache.get(Boolean.TRUE);
     }
 
     public static <K, V> XFunction.R1<K, V> create(String cacheName, Function<K, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<K, V> cache = LocalCache.createCache(cacheName, func, config);
+        LocalCacheInstance<K, V> cache = LocalCache.createCache(cacheName, func, config);
         return cache::get;
     }
 
     // 2个参数
     public static <K1, K2, V> XFunction.R2<K1, K2, V> create(String cacheName, XFunction.R2<K1, K2, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V2<K1, K2>, V> cache = LocalCache.createCache(cacheName, Tuple.V2.withCall(func), config);
+        LocalCacheInstance<Tuple.V2<K1, K2>, V> cache = LocalCache.createCache(cacheName, Tuple.V2.withCall(func), config);
         return (v1, v2) -> cache.get(new Tuple.V2<>(v1, v2));
     }
 
     // 3个参数
     public static <K1, K2, K3, V> XFunction.R3<K1, K2, K3, V> create(String cacheName, XFunction.R3<K1, K2, K3, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V3<K1, K2, K3>, V> cache = LocalCache.createCache(cacheName, Tuple.V3.withCall(func), config);
+        LocalCacheInstance<Tuple.V3<K1, K2, K3>, V> cache = LocalCache.createCache(cacheName, Tuple.V3.withCall(func), config);
         return (v1, v2, v3) -> cache.get(new Tuple.V3<>(v1, v2, v3));
     }
 
     // 4个参数
     public static <K1, K2, K3, K4, V> XFunction.R4<K1, K2, K3, K4, V> create(String cacheName, XFunction.R4<K1, K2, K3, K4, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V4<K1, K2, K3, K4>, V> cache = LocalCache.createCache(cacheName, Tuple.V4.withCall(func), config);
+        LocalCacheInstance<Tuple.V4<K1, K2, K3, K4>, V> cache = LocalCache.createCache(cacheName, Tuple.V4.withCall(func), config);
         return (v1, v2, v3, v4) -> cache.get(new Tuple.V4<>(v1, v2, v3, v4));
     }
 
     // 5个参数
     public static <K1, K2, K3, K4, K5, V> XFunction.R5<K1, K2, K3, K4, K5, V> create(String cacheName, XFunction.R5<K1, K2, K3, K4, K5, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V5<K1, K2, K3, K4, K5>, V> cache = LocalCache.createCache(cacheName, Tuple.V5.withCall(func), config);
+        LocalCacheInstance<Tuple.V5<K1, K2, K3, K4, K5>, V> cache = LocalCache.createCache(cacheName, Tuple.V5.withCall(func), config);
         return (v1, v2, v3, v4, v5) -> cache.get(new Tuple.V5<>(v1, v2, v3, v4, v5));
     }
 
     // 6个参数
     public static <K1, K2, K3, K4, K5, K6, V> XFunction.R6<K1, K2, K3, K4, K5, K6, V> create(String cacheName, XFunction.R6<K1, K2, K3, K4, K5, K6, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V6<K1, K2, K3, K4, K5, K6>, V> cache = LocalCache.createCache(cacheName, Tuple.V6.withCall(func), config);
+        LocalCacheInstance<Tuple.V6<K1, K2, K3, K4, K5, K6>, V> cache = LocalCache.createCache(cacheName, Tuple.V6.withCall(func), config);
         return (v1, v2, v3, v4, v5, v6) -> cache.get(new Tuple.V6<>(v1, v2, v3, v4, v5, v6));
     }
 
     // 7个参数
     public static <K1, K2, K3, K4, K5, K6, K7, V> XFunction.R7<K1, K2, K3, K4, K5, K6, K7, V> create(String cacheName, XFunction.R7<K1, K2, K3, K4, K5, K6, K7, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V7<K1, K2, K3, K4, K5, K6, K7>, V> cache = LocalCache.createCache(cacheName, Tuple.V7.withCall(func), config);
+        LocalCacheInstance<Tuple.V7<K1, K2, K3, K4, K5, K6, K7>, V> cache = LocalCache.createCache(cacheName, Tuple.V7.withCall(func), config);
         return (v1, v2, v3, v4, v5, v6, v7) -> cache.get(new Tuple.V7<>(v1, v2, v3, v4, v5, v6, v7));
     }
 
     // 8个参数
     public static <K1, K2, K3, K4, K5, K6, K7, K8, V> XFunction.R8<K1, K2, K3, K4, K5, K6, K7, K8, V> create(String cacheName, XFunction.R8<K1, K2, K3, K4, K5, K6, K7, K8, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V8<K1, K2, K3, K4, K5, K6, K7, K8>, V> cache = LocalCache.createCache(cacheName, Tuple.V8.withCall(func), config);
+        LocalCacheInstance<Tuple.V8<K1, K2, K3, K4, K5, K6, K7, K8>, V> cache = LocalCache.createCache(cacheName, Tuple.V8.withCall(func), config);
         return (v1, v2, v3, v4, v5, v6, v7, v8) -> cache.get(new Tuple.V8<>(v1, v2, v3, v4, v5, v6, v7, v8));
     }
 
     // 9个参数
     public static <K1, K2, K3, K4, K5, K6, K7, K8, K9, V> XFunction.R9<K1, K2, K3, K4, K5, K6, K7, K8, K9, V> create(String cacheName, XFunction.R9<K1, K2, K3, K4, K5, K6, K7, K8, K9, V> func, CacheConfig<V> config) {
-        LocalCache.LocalCacheInstance<Tuple.V9<K1, K2, K3, K4, K5, K6, K7, K8, K9>, V> cache = LocalCache.createCache(cacheName, Tuple.V9.withCall(func), config);
+        LocalCacheInstance<Tuple.V9<K1, K2, K3, K4, K5, K6, K7, K8, K9>, V> cache = LocalCache.createCache(cacheName, Tuple.V9.withCall(func), config);
         return (v1, v2, v3, v4, v5, v6, v7, v8, v9) -> cache.get(new Tuple.V9<>(v1, v2, v3, v4, v5, v6, v7, v8, v9));
     }
 
